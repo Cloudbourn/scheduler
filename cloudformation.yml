@@ -131,6 +131,13 @@ Resources:
               - dynamodb:GetShardIterator
               - dynamodb:ListStreams
               Resource: !GetAtt JobsTable.StreamArn
+            - Effect: Allow
+              Action:
+              - cloudwatch:PutMetricData
+              Resource: '*'
+              Condition:
+                StringEquals:
+                  'cloudwatch:namespace': !Sub ${PROJECT}
 
   DynamoStreamLambdaLogGroup:
     Type: AWS::Logs::LogGroup
