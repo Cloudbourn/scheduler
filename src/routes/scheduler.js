@@ -12,8 +12,6 @@ module.exports = exports = (api) => {
       id = '',
       endpoint,
       executeAt,
-      createdAt = new Date().toJSON(),
-      updatedAt = new Date().toJSON(),
     } = req.body
 
     const exists = id ? await jobs.getById(id) : false
@@ -33,8 +31,8 @@ module.exports = exports = (api) => {
       id: id || uuid(),
       endpoint,
       executeAt,
-      createdAt: exists ? exists.createdAt : createdAt,
-      updatedAt: updatedAt,
+      createdAt: exists ? exists.createdAt : new Date().toJSON(),
+      updatedAt: new Date().toJSON(),
     }
 
     await jobs.put(job)
