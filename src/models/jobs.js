@@ -62,3 +62,5 @@ exports.list = async () => {
       return rest
     })
 }
+
+exports.execute = async (job) => {}
