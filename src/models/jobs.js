@@ -53,8 +53,11 @@ exports.list = async () => {
   const jobs = await dynamo
     .scanAll({ TableName: JOBS_TABLE })
   return jobs
-    .sort((a, b) => {
-      return a.executeAt - b.executeAt
+    // FIFO (show soonest first)
+    .sort(({ executeAt: a }, { executeAt: b }) => {
+      if (a < b) return -1
+      if (a > b) return 1
+      return 0
     })
     // Strip ttlUnixSeconds since its an internal field
     .map(job => {
