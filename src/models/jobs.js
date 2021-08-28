@@ -54,7 +54,7 @@ exports.list = async () => {
     .scanAll({ TableName: JOBS_TABLE })
   return jobs
     .sort((a, b) => {
-      return a.scheduledAt - b.scheduledAt
+      return a.executeAt - b.executeAt
     })
     // Strip ttlUnixSeconds since its an internal field
     .map(job => {
