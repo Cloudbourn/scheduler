@@ -27,7 +27,7 @@ Globals:
         PROJECT: !Sub ${PROJECT}
 
 Resources:
-  # REST API
+  #region REST API
   ApiGateway:
     Type: AWS::Serverless::Api
     Properties:
@@ -81,8 +81,9 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${ApiLambda}
       RetentionInDays: 60
+  #endregion
 
-  # DynamoDB table and stream handler lambda
+  #region DynamoDB table and stream handler lambda
   JobsTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -145,3 +146,4 @@ Resources:
       EventSourceArn: !GetAtt JobsTable.StreamArn
       FunctionName: !GetAtt DynamoStreamLambda.Arn
       StartingPosition: LATEST
+  #endregion
