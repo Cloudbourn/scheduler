@@ -1,0 +1,85 @@
+---
+swagger: "2.0"
+info:
+  title:
+    Fn::Sub: scheduler-${ENVIRONMENT}
+  description: REST APIs for scheduler service
+  contact:
+    name: Joakim Hedlund
+  version: 1.0.0
+servers:
+  - url:
+      Fn::Sub: https://aws.triplehead.net/${PROJECT}/
+    description: The best of servers.
+schemes:
+  - https
+
+x-definitions:
+  APILambda: &APILambda
+    x-amazon-apigateway-integration:
+      uri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}/invocations
+      passthroughBehavior: when_no_match
+      httpMethod: POST
+      type: aws_proxy
+
+  enableCORS: &enableCORS
+    options:
+      <<: *APILambda
+
+definitions:
+  Job:
+    type: object
+    properties:
+      id:
+        type: string
+        description: UUID for the job, e.g. `193a3b0d-aec5-42ae-acf9-40d9e843447c`
+      endpoint:
+        type: string
+        description: URL that will be called when the job is executed.
+      # TODO: add "method" and "body"?
+      executeAt:
+        type: string
+      createdAt:
+        type: string
+      updatedAt:
+        type: string
+
+paths:
+  /jobs:
+    <<: *enableCORS
+    get:
+      <<: *APILambda
+      summary: List all jobs
+    post:
+      <<: *APILambda
+      summary: Create or update a job
+      consumes:
+        - application/json
+      parameters:
+        - name: event
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Job'
+            required:
+              - endpoint
+              - executeAt
+      responses:
+        200:
+          description: maximum swag
+        400:
+          description: no bueno
+
+x-amazon-apigateway-request-validator: validate-body-and-params
+x-amazon-apigateway-request-validators:
+  validate-body-and-params:
+    validateRequestParameters: true
+    validateRequestBody: true
+x-amazon-apigateway-gateway-responses:
+  DEFAULT_4XX:  &gatewayCorsResponse
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+      gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,GET,POST'"
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+  DEFAULT_5XX: *gatewayCorsResponse

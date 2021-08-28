@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  PROJECT:
+    Type: String
+  ENVIRONMENT:
+    Type: String
+
+Mappings:
+  dev:
+    api:
+      hostname: aws.triplehead.net
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Timeout: 30
+    Handler: index.handler
+    Tracing: Active
+    Environment:
+      Variables:
+        API_BASE_PATH: !Sub ${PROJECT}
+        ENVIRONMENT: !Sub ${ENVIRONMENT}
+        JOBS_TABLE: !Sub ${PROJECT}-jobs-${ENVIRONMENT}
+        LOG_LEVEL: info
+        PROJECT: !Sub ${PROJECT}
+
+Resources:
+  # REST API
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${PROJECT}-${ENVIRONMENT}
+      StageName: !Ref ENVIRONMENT
+      Cors:
+        AllowMethods: "'POST, GET, OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: swagger.yaml
+
+  BasePath:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: !Sub ${PROJECT}
+      DomainName: !FindInMap [!Ref ENVIRONMENT, api, hostname]
+      RestApiId: !Ref ApiGateway
+      Stage: !Ref ApiGateway.Stage
+
+  ApiLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${PROJECT}-api-${ENVIRONMENT}
+      CodeUri: dist/src/
+      Handler: apiHandler.handler
+      Policies:
+      - Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
+
+  ApiLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  ApiHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ApiLambda}
+      RetentionInDays: 60
+
+  # DynamoDB table and stream handler lambda
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub ${PROJECT}-jobs-${ENVIRONMENT}
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      StreamSpecification:
+        StreamViewType: OLD_IMAGE
+      TimeToLiveSpecification:
+        AttributeName: ttlUnixSeconds
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  DynamoStreamLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${PROJECT}-dynamodb-${ENVIRONMENT}
+      CodeUri: dist/src/
+      Handler: dynamoHandler.handler
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
+            - Effect: Allow
+              Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+              Resource: !GetAtt JobsTable.StreamArn
+
+  DynamoStreamLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${DynamoStreamLambda}
+      RetentionInDays: 60
+
+  DynamoStreamLambdaStreamSubscription:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 100
+      Enabled: true
+      EventSourceArn: !GetAtt JobsTable.StreamArn
+      FunctionName: !GetAtt DynamoStreamLambda.Arn
+      StartingPosition: LATEST
