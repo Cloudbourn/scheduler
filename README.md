@@ -6,7 +6,7 @@ A completely serverless, high-precision scheduler for ad hoc jobs.
 
 > ⚠ **Warning**
 >
-> The scheduler exposes a public API that can be used by anyone. It is not recommended that you deploy this project unless you are aware of the associated risks.
+> The scheduler exposes a public API that can be used by anyone. If you intend on deploying this project to production you should add an authorizer of your choice to the API Gateway.
 
 1. Clone this repo
 
