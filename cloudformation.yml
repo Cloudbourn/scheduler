@@ -25,6 +25,7 @@ Globals:
         JOBS_TABLE: !Sub ${PROJECT}-jobs-${ENVIRONMENT}
         LOG_LEVEL: info
         PROJECT: !Sub ${PROJECT}
+        TIMER_QUEUE_URL: !Ref TimerQueue
 
 Resources:
   #region REST API
@@ -68,6 +69,10 @@ Resources:
             - dynamodb:Query
             - dynamodb:Scan
             Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt TimerQueue.Arn
 
   ApiLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -138,6 +143,10 @@ Resources:
               Condition:
                 StringEquals:
                   'cloudwatch:namespace': !Sub ${PROJECT}
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt TimerQueue.Arn
 
   DynamoStreamLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -153,4 +162,48 @@ Resources:
       EventSourceArn: !GetAtt JobsTable.StreamArn
       FunctionName: !GetAtt DynamoStreamLambda.Arn
       StartingPosition: LATEST
+  #endregion
+
+  #region SQS queue and handler
+  TimerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${PROJECT}-timers-${ENVIRONMENT}
+      MessageRetentionPeriod: 1209600
+
+  TimerQueueLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${PROJECT}-sqs-${ENVIRONMENT}
+      CodeUri: dist/src/
+      Handler: sqsHandler.handler
+      Events:
+        EmailSqsEvents:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt TimerQueue.Arn
+            BatchSize: 10
+            Enabled: true
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:ChangeMessageVisibility
+                - sqs:GetQueueAttributes
+              Resource: !GetAtt TimerQueue.Arn
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt TimerQueue.Arn
+            - Effect: Allow
+              Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
   #endregion

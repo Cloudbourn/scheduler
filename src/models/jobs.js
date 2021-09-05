@@ -3,11 +3,9 @@ const {
   ENVIRONMENT = 'dev',
   PROJECT,
 } = process.env
+const JOBS_TABLE = process.env.JOBS_TABLE || `${PROJECT}-jobs-${ENVIRONMENT}`
 
 const dynamo = require('../utils/dynamoClient')
-const epochtime = require('../utils/epochtime')
-
-const JOBS_TABLE = process.env.JOBS_TABLE || `${PROJECT}-jobs-${ENVIRONMENT}`
 
 exports.getById = async (id) => {
   return dynamo
@@ -25,7 +23,7 @@ exports.getById = async (id) => {
  * @param {*} job
  */
 exports.put = async (job) => {
-  job.ttlUnixSeconds = epochtime.fromDate(job.executeAt)
+  job.updatedAt = new Date().toJSON()
 
   return dynamo.put({
     TableName: JOBS_TABLE,
@@ -39,7 +37,7 @@ exports.put = async (job) => {
  * @returns The complete updated job
  */
 exports.update = async (job) => {
-  if (job.executeAt) job.ttlUnixSeconds = epochtime.fromDate(job.executeAt)
+  job.updatedAt = new Date().toJSON()
 
   return dynamo.update({
     TableName: JOBS_TABLE,
@@ -54,16 +52,18 @@ exports.list = async () => {
     .scanAll({ TableName: JOBS_TABLE })
   return jobs
     // FIFO (show soonest first)
-    .sort(({ executeAt: a }, { executeAt: b }) => {
+    .sort(({ scheduleAt: a }, { scheduleAt: b }) => {
       if (a < b) return -1
       if (a > b) return 1
       return 0
     })
     // Strip ttlUnixSeconds since its an internal field
-    .map(job => {
-      const { ttlUnixSeconds, ...rest } = job
-      return rest
-    })
+    .map(this.formatForApi)
 }
 
-exports.execute = async (job) => {}
+/**
+ * Removes properties that expose unnecessary internals
+ */
+exports.formatForApi = ({ ttlUnixSeconds, ...job }) => {
+  return job
+}

@@ -1,15 +1,16 @@
 const { Converter: { unmarshall } } = require('aws-sdk/clients/dynamodb')
-const jobs = require('./models/jobs')
-const metrics = require('./utils/metrics')
+const timers = require('./models/timers')
 
 /**
+ * Handler for DynamoDB Stream events.
+ * Ignores all events except the automatically deleted TTL items.
  * @type {AWSLambda.DynamoDBStreamHandler}
  */
 exports.handler = async ({ Records }) => {
   for (const record of Records) {
     if (record.eventName === 'REMOVE') {
       const job = unmarshall(record.dynamodb.OldImage)
-      // If it was a deletion, we need to check if it was done manually or triggered by the TTL timer.
+      // Check if it was done manually or triggered by the TTL timer.
       // Manual deletions should be respected (i.e. ignored).
       // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-streams.html
       if (
@@ -17,15 +18,11 @@ exports.handler = async ({ Records }) => {
         record.userIdentity.type === 'Service' &&
         record.userIdentity.principalId === 'dynamodb.amazonaws.com'
       ) {
-        const now = Date.now()
+        // Strip the TTL from the job since we want to reinsert it with just the status from now on.
+        const { ttlUnixSeconds, ...cleanJob } = job
 
-        console.log('Executing job', job)
-        await jobs.execute(job)
-
-        // Store a metric to compare the millisecond difference between executeAt and actual time
-        const executeAt = job.ttlUnixSeconds * 1000
-        const diff = now - executeAt
-        await metrics.putDeviation(diff)
+        // Now let the timer loop decide what happens next
+        await timers.scheduleOrRun(cleanJob)
       } else {
         console.log('Manually deleted entry', job)
       }

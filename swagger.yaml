@@ -23,9 +23,19 @@ x-definitions:
       httpMethod: POST
       type: aws_proxy
 
+  CORSHeaders: &CORSHeaders
+    Access-Control-Allow-Headers:
+      type: string
+    Access-Control-Allow-Methods:
+      type: string
+    Access-Control-Allow-Origin:
+      type: string
+
   enableCORS: &enableCORS
-    options:
-      <<: *APILambda
+    <<: *APILambda
+    responses:
+      200:
+        description: Allows CORS
 
 definitions:
   Job:
@@ -38,22 +48,34 @@ definitions:
         type: string
         description: URL that will be called when the job is executed.
       # TODO: add "method" and "body"?
-      executeAt:
+      scheduleAt:
         type: string
+        description: An ISO 8601-compatible timestamp, e.g. `2021-09-03T18:45:00.000Z`
       createdAt:
         type: string
       updatedAt:
         type: string
+      executedAt:
+        type: string
 
 paths:
   /jobs:
-    <<: *enableCORS
+    options:
+      <<: *enableCORS
     get:
       <<: *APILambda
       summary: List all jobs
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Job'
+
     post:
       <<: *APILambda
-      summary: Create or update a job
+      summary: Create a job
       consumes:
         - application/json
       parameters:
@@ -64,12 +86,36 @@ paths:
             $ref: '#/definitions/Job'
             required:
               - endpoint
-              - executeAt
+              - scheduleAt
       responses:
         200:
           description: maximum swag
         400:
           description: no bueno
+  /jobs/{id}:
+    options:
+      <<: *enableCORS
+      parameters:
+        - name: id
+          in: path
+          type: string
+          required: true
+    get:
+      <<: *APILambda
+      summary: Retrieve a job
+      parameters:
+        - name: id
+          in: path
+          type: string
+          required: true
+      responses:
+        200:
+          description: Success
+          headers:
+            <<: *CORSHeaders
+          schema:
+            $ref: '#/definitions/Job'
+
 
 x-amazon-apigateway-request-validator: validate-body-and-params
 x-amazon-apigateway-request-validators:
