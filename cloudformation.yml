@@ -206,4 +206,10 @@ Resources:
               - dynamodb:Query
               - dynamodb:Scan
               Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
+
+  TimerQueueLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TimerQueueLambda}
+      RetentionInDays: 60
   #endregion
