@@ -41,6 +41,7 @@ exports.execute = async (job) => {
     method: 'GET',
     headers: {
       'User-Agent': 'github:Sleavely/scheduler',
+      'X-Job-Id': job.id,
     },
     followRedirects: true,
     timeout: 500,
