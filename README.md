@@ -40,3 +40,10 @@ The Time-To-Live feature in DynamoDB has very [unpredictable accuracy](https://d
 Similar to DynamoDB, SQS scales exceptionally well and is a very affordable service. The Delayed Message feature has precision to the second but you may only delay a message up to 15 minutes, so when a timer has less than 48 hours left it is continuously re-queued until it's time for the job to execute.
 
 ![Service diagram](./architecture.png)
+
+## SaaS Alternatives
+
+If you're not comfortable running your own service there are hosted schedulers that will do it for you. 💸
+
+* [Cronhooks](https://cronhooks.io/) - One scheduled hook at a time included in free plan
+* [Posthook](https://posthook.io/) - 500 free requests per month
