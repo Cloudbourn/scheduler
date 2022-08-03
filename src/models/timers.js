@@ -19,8 +19,11 @@ exports.scheduleOrRun = async (job) => {
 
   if (scheduled - now <= 48 * 60 * 60) {
     // Lets use SQS for shortterm storage.
-    await sqs.sendDelayedMessage(job.id, Math.min(scheduled - now, 15 * 60))
+    // Skip writing to dynamo if job status is already in the sqs stage
+    const isBouncing = job.status === 'QUEUED'
     job.status = 'QUEUED'
+    await sqs.sendDelayedMessage(JSON.stringify(job), Math.min(scheduled - now, 15 * 60))
+    if (isBouncing) return job
   } else {
     // Route to longterm storage in DynamoDB
     job.ttlUnixSeconds = epochtime.fromDate(job.scheduleAt)
