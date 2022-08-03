@@ -6,8 +6,7 @@ const timers = require('./models/timers')
  */
 exports.handler = async (event) => {
   for (const record of event.Records) {
-    const jobId = record.body
-    const job = await jobs.getById(jobId)
+    const job = JSON.parse(record.body)
     await timers.scheduleOrRun(job)
   }
 }
