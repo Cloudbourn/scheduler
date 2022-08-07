@@ -1,0 +1,37 @@
+name: Build and dispatch deployment workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    container:
+      image: sleavely/node-awscli:14.x
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: npm t
+
+  dispatch_deployment:
+    needs: tests
+    name: Dispatch deployment workflow
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.WRAPPER_TOKEN }}
+        script: |
+          await github.rest.actions.createWorkflowDispatch({
+            owner: 'cloudbourn',
+            repo: 'scheduler-wrapper',
+            workflow_id: 'main.yml',
+            ref: 'main'
+          })
