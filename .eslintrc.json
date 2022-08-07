@@ -1,13 +1,9 @@
 {
-  "extends": "standard",
-  "rules": {
-    "comma-dangle": [
-      "error",
-      "always-multiline"
-    ],
-    "eqeqeq": "warn"
-  },
   "env": {
     "jest": true
+  },
+  "extends": "standard",
+  "rules": {
+    "comma-dangle": ["error", "always-multiline"]
   }
 }
