@@ -1,4 +1,3 @@
-const jobs = require('./models/jobs')
 const timers = require('./models/timers')
 
 /**
