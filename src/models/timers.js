@@ -43,7 +43,7 @@ exports.execute = async (job) => {
     url: job.endpoint,
     method: 'GET',
     headers: {
-      'User-Agent': 'github:Sleavely/scheduler',
+      'User-Agent': 'github:Cloudbourn/scheduler',
       'X-Job-Id': job.id,
     },
     followRedirects: true,
