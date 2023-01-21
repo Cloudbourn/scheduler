@@ -2,6 +2,7 @@
 const { v4: uuid } = require('uuid')
 const jobs = require('../models/jobs')
 const timers = require('../models/timers')
+const { findUrlError } = require('../utils/endpointValidation')
 
 module.exports = exports = (api) => {
   api.get('/jobs', async (req, res) => {
@@ -30,12 +31,39 @@ module.exports = exports = (api) => {
     if (!endpoint) {
       return res.status(400).send({ error: 'endpoint is required.' })
     }
-    // TODO: Assert that its a valid URL
+
+    // URL may not be longer than 1kb
+    if (endpoint.length > 1000) {
+      return res.status(400).send({ error: 'endpoint can not exceed 1kb.' })
+    }
+
+    // URL validity
+    const urlError = await findUrlError(endpoint)
+    if (urlError) {
+      return res.status(400).send({ error: urlError })
+    }
+
+    // stick to the HTTP methods we know and love
+    if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      return res.status(400).send({ error: 'Unsupported method.' })
+    }
+
+    if (['POST', 'PUT', 'PATCH'].includes(method) && typeof body === 'undefined') {
+      return res.status(400).send({ error: `body is required for ${method}.` })
+    }
+
+    // if there is a payload
+    if (typeof body !== 'undefined' && JSON.stringify(body).length > 1000) {
+      return res.status(400).send({ error: 'body can not exceed 1kb.' })
+    }
 
     if (!scheduleAt) {
       return res.status(400).send({ error: 'scheduleAt is required.' })
     }
-    // TODO: Assert that its a valid RFC 8601 datetime (or at least JS Date constructor)
+
+    if (!new Date(scheduleAt).toJSON()) {
+      return res.status(400).send({ error: 'scheduleAt must be compliant with RFC 3339.' })
+    }
 
     const job = {
       id: uuid(),
