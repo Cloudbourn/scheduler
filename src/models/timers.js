@@ -41,11 +41,14 @@ exports.execute = async (job) => {
   // TODO: this should use SQS to decouple HTTP errors from incoming event batches
   const response = await phin({
     url: job.endpoint,
-    method: 'GET',
+    method: job.method,
     headers: {
       'User-Agent': 'github:Cloudbourn/scheduler',
       'X-Job-Id': job.id,
+      // TODO: content-length and content-type?
+      // TODO: job.headers?
     },
+    data: job.body,
     followRedirects: true,
     timeout: 500,
   })

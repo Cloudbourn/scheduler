@@ -22,6 +22,8 @@ module.exports = exports = (api) => {
   api.post('/jobs', async (req, res) => {
     const {
       endpoint,
+      method = 'GET',
+      body = undefined,
       scheduleAt,
     } = req.body
 
@@ -38,6 +40,8 @@ module.exports = exports = (api) => {
     const job = {
       id: uuid(),
       endpoint,
+      method,
+      body,
       scheduleAt,
       createdAt: new Date().toJSON(),
     }

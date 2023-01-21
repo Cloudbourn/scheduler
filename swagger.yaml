@@ -47,7 +47,12 @@ definitions:
       endpoint:
         type: string
         description: URL that will be called when the job is executed.
-      # TODO: add "method" and "body"?
+      method:
+        type: string
+        description: GET, POST, PUT, PATCH, or DELETE
+      body:
+        type: object
+        description: JSON payload, required for methods that aren't GET or DELETE
       scheduleAt:
         type: string
         description: An ISO 8601-compatible timestamp, e.g. `2021-09-03T18:45:00.000Z`
