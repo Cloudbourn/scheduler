@@ -54,7 +54,7 @@ exports.execute = async (job) => {
   })
 
   if (response.statusCode > 399) {
-    console.error('Endpoint returned 4xx or 5xx!', { job })
+    console.warn('Endpoint returned 4xx or 5xx!', { job })
   }
 
   job.executedAt = new Date().toJSON()
