@@ -2,6 +2,8 @@ const epochtime = require('../utils/epochtime')
 const jobs = require('./jobs')
 const phin = require('phin')
 const sqs = require('../utils/sqs')
+const sleep = require('../utils/sleep')
+const { preConnectSocket } = require('../utils/preconnect')
 
 // Adding a small margin to skip the roundtrip to SQS
 // if the job is meant to be executed almost immediately anyway.
@@ -14,7 +16,11 @@ exports.scheduleOrRun = async (job) => {
   console.log({ job, now, scheduled })
 
   if (now + EXECUTION_MARGIN_IN_SECONDS >= scheduled) {
-    return this.execute(job)
+    const [socket] = await Promise.all([
+      preConnectSocket(job.endpoint),
+      sleep((scheduled - now) * 1000),
+    ])
+    return this.execute(job, socket)
   }
 
   if (scheduled - now <= 48 * 60 * 60) {
@@ -34,7 +40,7 @@ exports.scheduleOrRun = async (job) => {
   return job
 }
 
-exports.execute = async (job) => {
+exports.execute = async (job, createConnection = undefined) => {
   job.status = 'RUNNING'
   await jobs.put(job)
 
@@ -51,6 +57,7 @@ exports.execute = async (job) => {
     data: job.body,
     followRedirects: true,
     timeout: 500,
+    createConnection,
   })
 
   if (response.statusCode > 399) {
