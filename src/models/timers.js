@@ -2,6 +2,7 @@ const epochtime = require('../utils/epochtime')
 const jobs = require('./jobs')
 const phin = require('phin')
 const sqs = require('../utils/sqs')
+const eventbridge = require('../utils/eventbridge')
 
 // Adding a small margin to skip the roundtrip to SQS
 // if the job is meant to be executed almost immediately anyway.
@@ -17,7 +18,7 @@ exports.scheduleOrRun = async (job) => {
     return this.execute(job)
   }
 
-  if (scheduled - now <= 48 * 60 * 60) {
+  if (scheduled - now <= 2 * 60) {
     // Lets use SQS for shortterm storage.
     // Skip writing to dynamo if job status is already in the sqs stage
     const isBouncing = job.status === 'QUEUED'
@@ -26,7 +27,7 @@ exports.scheduleOrRun = async (job) => {
     if (isBouncing) return job
   } else {
     // Route to longterm storage in DynamoDB
-    job.ttlUnixSeconds = epochtime.fromDate(job.scheduleAt)
+    eventbridge.schedule(job.id, job.scheduleAt)
     job.status = 'STORED'
   }
 

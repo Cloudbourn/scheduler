@@ -26,6 +26,8 @@ Globals:
         LOG_LEVEL: info
         PROJECT: !Sub ${PROJECT}
         TIMER_QUEUE_URL: !Ref TimerQueue
+        EVENTBRIDGE_HANDLER_ARN: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${PROJECT}-eventbridge-${ENVIRONMENT}
+        EVENTBRIDGE_ROLE_ARN: !GetAtt EventbridgeExecutionRole.Arn
 
 Resources:
   #region REST API
@@ -212,4 +214,54 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TimerQueueLambda}
       RetentionInDays: 60
+  #endregion
+
+  #region Eventbridge handler and IAM execution role
+  EventbridgeLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${PROJECT}-eventbridge-${ENVIRONMENT}
+      CodeUri: dist/src/
+      Handler: eventbridgeHandler.handler
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt TimerQueue.Arn
+            - Effect: Allow
+              Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
+
+  EventbridgeLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${EventbridgeLambda}
+      RetentionInDays: 60
+
+  EventbridgeExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: scheduler.amazonaws.com
+      Policies:
+        - PolicyName: InvokeEventbridgeHandlerLambda
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  # using !Sub because !GetAtt EventbridgeLambda.Arn would cause a circular dependency
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${PROJECT}-eventbridge-${ENVIRONMENT}
+
   #endregion

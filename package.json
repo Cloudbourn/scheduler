@@ -24,7 +24,7 @@
     "@cloudbourn/commitlint-config": "^1.0.0",
     "@commitlint/cli": "^17.4.2",
     "@types/aws-lambda": "^8.10.77",
-    "aws-sdk": "^2.924.0",
+    "aws-sdk": "^2.1312.0",
     "eslint": "^8.13.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.26.0",
