@@ -149,6 +149,10 @@ Resources:
               Action:
                 - sqs:SendMessage
               Resource: !GetAtt TimerQueue.Arn
+            - Effect: Allow
+              Action:
+                - scheduler:CreateSchedule
+              Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
 
   DynamoStreamLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -208,6 +212,10 @@ Resources:
               - dynamodb:Query
               - dynamodb:Scan
               Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
+            - Effect: Allow
+              Action:
+                - scheduler:CreateSchedule
+              Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
 
   TimerQueueLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -237,6 +245,10 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:Query
               Resource: !Join [ "", [ !GetAtt JobsTable.Arn, "*" ]]
+            - Effect: Allow
+              Action:
+                - scheduler:CreateSchedule
+              Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
 
   EventbridgeLambdaLogGroup:
     Type: AWS::Logs::LogGroup
