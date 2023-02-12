@@ -79,6 +79,10 @@ Resources:
             Action:
               - scheduler:CreateSchedule
             Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !GetAtt EventbridgeExecutionRole.Arn
 
   ApiLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -157,6 +161,10 @@ Resources:
               Action:
                 - scheduler:CreateSchedule
               Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
+            - Effect: Allow
+              Action:
+                - iam:PassRole
+              Resource: !GetAtt EventbridgeExecutionRole.Arn
 
   DynamoStreamLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -220,6 +228,10 @@ Resources:
               Action:
                 - scheduler:CreateSchedule
               Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
+            - Effect: Allow
+              Action:
+                - iam:PassRole
+              Resource: !GetAtt EventbridgeExecutionRole.Arn
 
   TimerQueueLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -253,6 +265,10 @@ Resources:
               Action:
                 - scheduler:CreateSchedule
               Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
+            - Effect: Allow
+              Action:
+                - iam:PassRole
+              Resource: !GetAtt EventbridgeExecutionRole.Arn
 
   EventbridgeLambdaLogGroup:
     Type: AWS::Logs::LogGroup
