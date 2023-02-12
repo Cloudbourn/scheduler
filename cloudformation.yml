@@ -75,6 +75,10 @@ Resources:
             Action:
               - sqs:SendMessage
             Resource: !GetAtt TimerQueue.Arn
+          - Effect: Allow
+            Action:
+              - scheduler:CreateSchedule
+            Resource: !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*
 
   ApiLambdaInvokePermission:
     Type: AWS::Lambda::Permission
