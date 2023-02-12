@@ -27,7 +27,7 @@ exports.scheduleOrRun = async (job) => {
     if (isBouncing) return job
   } else {
     // Route to longterm storage in DynamoDB
-    eventbridge.schedule(job.id, job.scheduleAt)
+    await eventbridge.schedule(job.id, job.scheduleAt)
     job.status = 'STORED'
   }
 

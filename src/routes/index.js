@@ -70,7 +70,7 @@ module.exports = exports = (api) => {
       endpoint,
       method,
       body,
-      scheduleAt,
+      scheduleAt: new Date(scheduleAt).toJSON(), // casts scheduleAt to UTC
       createdAt: new Date().toJSON(),
     }
 
