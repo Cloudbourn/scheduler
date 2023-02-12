@@ -26,7 +26,7 @@ exports.schedule = async (id, scheduledAt) => {
     ScheduleExpression: `at(${targetDate})`,
     Target: {
       Arn: EVENTBRIDGE_HANDLER_ARN,
-      Input: id,
+      Input: JSON.stringify(id),
       RoleArn: EVENTBRIDGE_ROLE_ARN,
     },
   })
