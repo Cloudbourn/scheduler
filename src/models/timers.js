@@ -18,16 +18,20 @@ exports.scheduleOrRun = async (job) => {
     return this.execute(job)
   }
 
-  if (scheduled - now <= 2 * 60) {
+  if (scheduled - now <= 120) {
     // Lets use SQS for shortterm storage.
     // Skip writing to dynamo if job status is already in the sqs stage
     const isBouncing = job.status === 'QUEUED'
     job.status = 'QUEUED'
-    await sqs.sendDelayedMessage(JSON.stringify(job), Math.min(scheduled - now, 15 * 60))
+
+    // lets aim somewhere in the middle of the margin
+    const remainingSecondsWithMargin = scheduled - (now + EXECUTION_MARGIN_IN_SECONDS / 2)
+    await sqs.sendDelayedMessage(JSON.stringify(job), Math.min(remainingSecondsWithMargin, 15 * 60))
+
     if (isBouncing) return job
   } else {
     // Route to longterm storage in DynamoDB
-    await eventbridge.schedule(job.id, job.scheduleAt)
+    await eventbridge.schedule(job.id, (scheduled - 120) * 1000)
     job.status = 'STORED'
   }
 
