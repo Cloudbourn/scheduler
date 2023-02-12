@@ -1,4 +1,4 @@
-const Scheduler = require('aws-sdk/clients/scheduler')
+const { SchedulerClient, CreateScheduleCommand, DeleteScheduleCommand } = require('@aws-sdk/client-scheduler')
 
 const {
   AWS_REGION = 'eu-west-1',
@@ -6,7 +6,7 @@ const {
   EVENTBRIDGE_ROLE_ARN = '',
 } = process.env
 
-const eventbridge = new Scheduler({ region: AWS_REGION })
+const eventbridge = new SchedulerClient({ region: AWS_REGION })
 
 /**
  * @param {Date|string|number} scheduledAt Something Date() can parse
@@ -20,7 +20,7 @@ exports.schedule = async (id, scheduledAt) => {
     .toJSON() // normalizes to UTC
     .split('.')[0] // strip fractions and TZ
 
-  return eventbridge.createSchedule({
+  const command = new CreateScheduleCommand({
     Name: id,
     FlexibleTimeWindow: { Mode: 'OFF' },
     ScheduleExpression: `at(${targetDate})`,
@@ -29,11 +29,14 @@ exports.schedule = async (id, scheduledAt) => {
       Input: id,
       RoleArn: EVENTBRIDGE_ROLE_ARN,
     },
-  }).promise()
+  })
+
+  return eventbridge.send(command)
 }
 
 exports.deleteSchedule = async (id) => {
-  return eventbridge.deleteSchedule({
+  const command = new DeleteScheduleCommand({
     Name: id,
-  }).promise()
+  })
+  return eventbridge.send(command)
 }
