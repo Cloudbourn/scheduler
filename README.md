@@ -17,10 +17,6 @@ The scheduler will make a HTTP request to the defined endpoint soon after the ti
 
 ## Architecture
 
-A combination of DynamoDBs TTL and SQS' Message Delays is used to reach a precision close to seconds while maintaining a serverless approach that truly scales.
-
-## Architecture
-
 Job details are stored in DynamoDB while the scheduling is managed by a combination of Eventbridge schedules and SQS' Message Delays to reach a precision close to 1 second while maintaining a serverless approach that truly scales.
 
 ![Service diagram](./architecture.png)
