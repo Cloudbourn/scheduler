@@ -1,9 +1,7 @@
 name: Build and dispatch deployment workflow
 
 on:
-  push:
-    branches:
-      - main
+  - push
 
 jobs:
   tests:
@@ -33,5 +31,8 @@ jobs:
             owner: 'cloudbourn',
             repo: 'scheduler-wrapper',
             workflow_id: 'main.yml',
-            ref: 'main'
+            ref: 'main',
+            inputs: {
+              core_ref: context.ref
+            }
           })
