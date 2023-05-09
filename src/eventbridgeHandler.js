@@ -12,5 +12,9 @@ exports.handler = async (jobId) => {
 
   // fetch the job from dynamodb and run it through the job executor
   const job = await jobs.getById(jobId)
+  if (!job) {
+    console.log(`Job no longer exists, ignoring ${jobId}`)
+    return
+  }
   await timers.scheduleOrRun(job)
 }
