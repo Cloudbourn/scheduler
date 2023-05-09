@@ -1,9 +1,11 @@
-const { SchedulerClient, CreateScheduleCommand, DeleteScheduleCommand } = require('@aws-sdk/client-scheduler')
+const { SchedulerClient, CreateScheduleCommand, UpdateScheduleCommand, DeleteScheduleCommand } = require('@aws-sdk/client-scheduler')
 
 const {
   AWS_REGION = 'eu-west-1',
+  ENVIRONMENT = '',
   EVENTBRIDGE_HANDLER_ARN = '',
   EVENTBRIDGE_ROLE_ARN = '',
+  PROJECT = '',
 } = process.env
 
 const eventbridge = new SchedulerClient({ region: AWS_REGION })
@@ -20,7 +22,8 @@ exports.schedule = async (id, scheduledAt) => {
     .toJSON() // normalizes to UTC
     .split('.')[0] // strip fractions and TZ
 
-  const command = new CreateScheduleCommand({
+  const schedulePayload = {
+    GroupName: `${PROJECT}-${ENVIRONMENT}`,
     Name: id,
     FlexibleTimeWindow: { Mode: 'OFF' },
     ScheduleExpression: `at(${targetDate})`,
@@ -29,9 +32,19 @@ exports.schedule = async (id, scheduledAt) => {
       Input: JSON.stringify(id),
       RoleArn: EVENTBRIDGE_ROLE_ARN,
     },
-  })
+  }
 
-  return eventbridge.send(command)
+  try {
+    const createResponse = await eventbridge.send(new CreateScheduleCommand(schedulePayload))
+    return createResponse
+  } catch (err) {
+    // in case the schedule already exists, update it
+    if (err.name && err.name === 'ConflictException') {
+      const updateResponse = await eventbridge.send(new UpdateScheduleCommand(schedulePayload))
+      return updateResponse
+    }
+    throw err
+  }
 }
 
 exports.deleteSchedule = async (id) => {

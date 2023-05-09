@@ -300,4 +300,8 @@ Resources:
                   # using !Sub because !GetAtt EventbridgeLambda.Arn would cause a circular dependency
                   - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${PROJECT}-eventbridge-${ENVIRONMENT}
 
+  EventbridgeScheduleGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: !Sub ${PROJECT}-${ENVIRONMENT}
   #endregion
