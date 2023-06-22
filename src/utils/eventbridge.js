@@ -49,6 +49,7 @@ exports.schedule = async (id, scheduledAt) => {
 
 exports.deleteSchedule = async (id) => {
   const command = new DeleteScheduleCommand({
+    GroupName: `${PROJECT}-${ENVIRONMENT}`,
     Name: id,
   })
   return eventbridge.send(command)
