@@ -1,4 +1,3 @@
-
 const { v4: uuid } = require('uuid')
 const jobs = require('../models/jobs')
 const timers = require('../models/timers')

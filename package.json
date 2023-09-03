@@ -10,8 +10,8 @@
   "keywords": [],
   "main": "index.js",
   "scripts": {
-    "test": "eslint .",
-    "prepare": "husky install"
+    "test": "npx eslint .",
+    "prepare": "npx husky install"
   },
   "dependencies": {
     "@aws-sdk/client-scheduler": "^3.267.0",
@@ -27,7 +27,7 @@
     "@types/aws-lambda": "^8.10.77",
     "aws-sdk": "^2.1312.0",
     "eslint": "^8.13.0",
-    "eslint-config-standard": "^16.0.3",
+    "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.0.0",

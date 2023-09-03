@@ -1,4 +1,3 @@
-
 const {
   ENVIRONMENT = 'dev',
   PROJECT,
