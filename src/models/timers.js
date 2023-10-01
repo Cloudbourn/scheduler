@@ -43,6 +43,9 @@ exports.execute = async (job) => {
   job.status = 'RUNNING'
   await jobs.put(job)
 
+  job.executedAt = new Date().toJSON()
+  job.status = 'DONE'
+
   // TODO: this should use SQS to decouple HTTP errors from incoming event batches
   const response = await phin({
     url: job.endpoint,
@@ -62,8 +65,6 @@ exports.execute = async (job) => {
     console.warn('Endpoint returned 4xx or 5xx!', { job })
   }
 
-  job.executedAt = new Date().toJSON()
-  job.status = 'DONE'
   await jobs.put(job)
   return job
 }
