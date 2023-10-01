@@ -59,10 +59,18 @@ exports.execute = async (job) => {
     data: job.body,
     followRedirects: true,
     timeout: 500,
+  }).catch(err => {
+    if (err.toString().toLowerCase().includes('timeout')) {
+      return {
+        statusCode: 504,
+        body: 'Scheduler timed out while waiting for a response from the job endpoint.',
+      }
+    }
+    throw err
   })
 
   if (response.statusCode > 399) {
-    console.warn('Endpoint returned 4xx or 5xx!', { job })
+    console.warn('Endpoint returned 4xx or 5xx!', { job, response })
   }
 
   await jobs.put(job)
