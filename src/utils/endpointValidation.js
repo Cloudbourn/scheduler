@@ -2,6 +2,7 @@ const { Resolver } = require('dns').promises
 const resolver = new Resolver()
 
 // Cloudflare and Google, respectively
+// Helps ensure we dont resolve localhost or other non-public hostnames
 resolver.setServers(['1.1.1.1', '8.8.8.8'])
 
 const resolverCache = new Map()
